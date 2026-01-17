@@ -8,28 +8,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+// TODO: 영웅 등급은 따로 작성해야 함.
+private val successPercent = listOf(100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 65, 50, 35, 25, 20)
+private val stones = listOf(420, 600, 1100, 1680, 2350, 3090, 3890, 4760, 5670, 6650, 7670, 8730, 9850, 11010, 12200)
+private val kina = listOf(10500, 15000, 27500, 42000, 59000, 87000, 98000, 119000, 142000, 167000, 300000, 440000, 710000, 1110000, 1530000)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
     MaterialTheme {
-        // Dropdown menu states
-        var selectedGrade by remember { mutableStateOf("Heroic") }
-        var expandedGrade by remember { mutableStateOf(false) }
-
-        var selectedType by remember { mutableStateOf("Weapon") }
-        var expandedType by remember { mutableStateOf(false) }
-
-        var selectedLevel by remember { mutableStateOf("50") }
+        var selectedLevel by remember { mutableStateOf(50) }
         var expandedLevel by remember { mutableStateOf(false) }
+
+        var currentLevel by remember { mutableStateOf(0) }
+        var expandedCurrent by remember { mutableStateOf(false) }
+
+        var targetLevel by remember { mutableStateOf(0) }
+        var expandedTarget by remember { mutableStateOf(false) }
 
         // TextField states
         var currentEnhancement by remember { mutableStateOf("") }
         var targetEnhancement by remember { mutableStateOf("") }
 
-        // Grade, type, and level options
-        val grades = listOf("Normal", "Advanced", "Rare", "Heroic", "Legendary", "Mythic")
-        val types = listOf("Weapon", "Armor", "Accessory")
-        val levels = listOf("10", "20", "30", "40", "50", "60", "70", "80", "90", "100")
+        val levels = listOf(55, 57, 67, 84)
 
         Column(
             modifier = Modifier
@@ -45,75 +46,12 @@ fun App() {
                 style = MaterialTheme.typography.headlineMedium
             )
 
-            // Dropdown 1: Item Grade
-            ExposedDropdownMenuBox(
-                expanded = expandedGrade,
-                onExpandedChange = { expandedGrade = it }
-            ) {
-                OutlinedTextField(
-                    value = selectedGrade,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Item Grade") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGrade) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedGrade,
-                    onDismissRequest = { expandedGrade = false }
-                ) {
-                    grades.forEach { grade ->
-                        DropdownMenuItem(
-                            text = { Text(grade) },
-                            onClick = {
-                                selectedGrade = grade
-                                expandedGrade = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Dropdown 2: Item Type
-            ExposedDropdownMenuBox(
-                expanded = expandedType,
-                onExpandedChange = { expandedType = it }
-            ) {
-                OutlinedTextField(
-                    value = selectedType,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Item Type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedType,
-                    onDismissRequest = { expandedType = false }
-                ) {
-                    types.forEach { type ->
-                        DropdownMenuItem(
-                            text = { Text(type) },
-                            onClick = {
-                                selectedType = type
-                                expandedType = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Dropdown 3: Item Level
             ExposedDropdownMenuBox(
                 expanded = expandedLevel,
                 onExpandedChange = { expandedLevel = it }
             ) {
                 OutlinedTextField(
-                    value = selectedLevel,
+                    value = currentLevel.toString(),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Item Level") },
@@ -128,9 +66,9 @@ fun App() {
                 ) {
                     levels.forEach { level ->
                         DropdownMenuItem(
-                            text = { Text(level) },
+                            text = { Text(level.toString()) },
                             onClick = {
-                                selectedLevel = level
+                                currentLevel = level
                                 expandedLevel = false
                             }
                         )
@@ -138,30 +76,77 @@ fun App() {
                 }
             }
 
-            // TextField 1: Current Enhancement
-            OutlinedTextField(
-                value = currentEnhancement,
-                onValueChange = { currentEnhancement = it },
-                label = { Text("Current Enhancement") },
-                placeholder = { Text("0~14") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row {
+                // 현재 단계
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.width(500.dp),
+                    expanded = expandedCurrent,
+                    onExpandedChange = { expandedCurrent = it }
+                ) {
+                    OutlinedTextField(
+                        value = targetLevel.toString(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("123") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCurrent) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
 
-            // TextField 2: Target Enhancement
-            OutlinedTextField(
-                value = targetEnhancement,
-                onValueChange = { targetEnhancement = it },
-                label = { Text("Target Enhancement") },
-                placeholder = { Text("1~15") },
-                modifier = Modifier.fillMaxWidth()
-            )
+                    ExposedDropdownMenu(
+                        expanded = expandedCurrent,
+                        onDismissRequest = { expandedCurrent = false }
+                    ) {
+                        levels.forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level.toString()) },
+                                onClick = {
+                                    targetLevel = level
+                                    expandedCurrent = false
+                                }
+                            )
+                        }
+                    }
+                }
 
-            // Button: Calculate
+                // 목표 단계
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.width(500.dp),
+                    expanded = expandedTarget,
+                    onExpandedChange = { expandedLevel = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedLevel.toString(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("4") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTarget) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedTarget,
+                        onDismissRequest = { expandedTarget = false }
+                    ) {
+                        levels.forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level.toString()) },
+                                onClick = {
+                                    selectedLevel = level
+                                    expandedTarget = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+
+
             Button(
                 onClick = {
-                    // Calculation logic goes here
-                    println("Grade: $selectedGrade")
-                    println("Type: $selectedType")
                     println("Level: $selectedLevel")
                     println("Current: $currentEnhancement")
                     println("Target: $targetEnhancement")
