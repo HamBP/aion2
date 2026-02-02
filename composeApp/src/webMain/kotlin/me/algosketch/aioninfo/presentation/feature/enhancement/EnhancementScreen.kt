@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,16 +43,16 @@ fun EnhancementScreen(
 
     val levels = listOf(67, 84)
 
-    var top5 by remember { mutableStateOf(0 to 0) }
-    var middle by remember { mutableStateOf(0 to 0) }
-    var bottom5 by remember { mutableStateOf(0 to 0) }
+    var stonesData by remember { mutableStateOf(emptyList<Int>()) }
+    var kinaData by remember { mutableStateOf(emptyList<Int>()) }
 
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.primaryContainer)
             .safeContentPadding()
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -169,16 +171,8 @@ fun EnhancementScreen(
                     resultKinaList.add(kina)
                 }
 
-                val resultStones = resultStonesList.sorted()
-                val resultKina = resultKinaList.sorted()
-
-                val index5 = simulations * 5 / 100 - 1
-                val index50 = simulations / 2 - 1
-                val index95 = simulations * 95 / 100 - 1
-
-                top5 = resultStones[index5] to resultKina[index5]
-                middle = resultStones[index50] to resultKina[index50]
-                bottom5 = resultStones[index95] to resultKina[index95]
+                stonesData = resultStonesList
+                kinaData = resultKinaList
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -187,9 +181,11 @@ fun EnhancementScreen(
             Text("Calculate Cost")
         }
 
-        Text(text = "result")
-        Text(text = "5 : ${top5.first}, ${top5.second}")
-        Text(text = "50 : ${middle.first}, ${middle.second}")
-        Text(text = "95 : ${bottom5.first}, ${bottom5.second}")
+        if (stonesData.isNotEmpty()) {
+            DualCdfChart(
+                stonesData = stonesData,
+                kinaData = kinaData
+            )
+        }
     }
 }
