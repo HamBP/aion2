@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -25,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,9 +51,9 @@ fun EnhancementScreen(
 
     Column(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
             .safeContentPadding()
             .fillMaxSize()
+            .background(Color.White)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,7 +94,9 @@ fun EnhancementScreen(
             }
         }
 
-        Row {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             // 현재 단계
             ExposedDropdownMenuBox(
                 modifier = Modifier.weight(1f),
@@ -159,6 +164,9 @@ fun EnhancementScreen(
         }
 
         Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             onClick = {
                 val simulations = 10000
                 val resultStonesList = mutableListOf<Int>()
@@ -174,9 +182,9 @@ fun EnhancementScreen(
                 stonesData = resultStonesList
                 kinaData = resultKinaList
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            colors = ButtonDefaults.buttonColors().copy(
+                containerColor = Color(0xFF222222)
+            ),
         ) {
             Text("Calculate Cost")
         }
