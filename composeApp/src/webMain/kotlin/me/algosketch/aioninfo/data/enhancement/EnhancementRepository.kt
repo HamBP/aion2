@@ -77,7 +77,7 @@ object EnhancementRepository {
 
     // 돌파 강화
     val uniqueBreakthroughPercent = listOf(66, 50, 33, 25, 20)
-    val heroBreakthroughPercent = listOf(33, 25, 16.5, 12.5, 10)
+    val heroBreakthroughPercent = listOf(33.0, 25.0, 16.5, 12.5, 10.0)
 
     val uniqueEnhancementCosts = listOf(
         BreakthroughCost(

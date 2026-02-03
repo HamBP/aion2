@@ -1,35 +1,16 @@
 package me.algosketch.aioninfo.presentation.feature.enhancement
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import me.algosketch.aioninfo.data.enhancement.Enhancement
+import me.algosketch.aioninfo.data.enhancement.EnhancementRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +26,7 @@ fun EnhancementScreen(
     var targetLevel by remember { mutableStateOf(0) }
     var expandedTarget by remember { mutableStateOf(false) }
 
-    val levels = remember { Enhancement.items.map { it.itemLevel } }
+    val levels = remember { EnhancementRepository.items.map { it.itemLevel } }
 
     var stonesData by remember { mutableStateOf(emptyList<Int>()) }
     var kinaData by remember { mutableStateOf(emptyList<Int>()) }
@@ -87,7 +68,7 @@ fun EnhancementScreen(
                     DropdownMenuItem(
                         text = { Text(level.toString()) },
                         onClick = {
-                            currentLevel = level
+                            selectedLevel = level
                             expandedLevel = false
                         }
                     )
@@ -174,10 +155,14 @@ fun EnhancementScreen(
                 val resultKinaList = mutableListOf<Int>()
 
                 repeat(simulations) {
-                    val (stones, kina) = viewModel.simulate(currentLevel, targetLevel)
+                    val (enhancement, breakthrough) = viewModel.simulate(
+                        itemLevel = selectedLevel,
+                        startEnhancement = EnhancementLevel(enhancementLevel = currentLevel, breakthroughLevel = 0),
+                        targetEnhancement = EnhancementLevel(enhancementLevel = targetLevel, breakthroughLevel = 0),
+                    )
 
-                    resultStonesList.add(stones)
-                    resultKinaList.add(kina)
+                    resultStonesList.add(enhancement.stones)
+                    resultKinaList.add(enhancement.kina)
                 }
 
                 stonesData = resultStonesList
