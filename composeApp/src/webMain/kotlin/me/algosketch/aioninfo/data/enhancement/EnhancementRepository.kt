@@ -2,7 +2,11 @@ package me.algosketch.aioninfo.data.enhancement
 
 import kotlin.collections.listOf
 
-object Enhancement {
+object EnhancementRepository {
+    // 일반 강화
+    val uniqueSuccessPercent = listOf(100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 65, 50, 35, 25, 20)
+    val heroSuccessPercent = listOf(100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 65, 50, 35, 25, 20, 20, 15, 15, 10, 10)
+
     val items = listOf(
         ItemEnhancementInfo(
             itemLevel = 84,
@@ -69,5 +73,55 @@ object Enhancement {
                 ),
             ),
         )
+    )
+
+    // 돌파 강화
+    val uniqueBreakthroughPercent = listOf(66, 50, 33, 25, 20)
+    val heroBreakthroughPercent = listOf(33, 25, 16.5, 12.5, 10)
+
+    val uniqueEnhancementCosts = listOf(
+        BreakthroughCost(
+            stones = 6,
+            kina = 600_000,
+        ),
+        BreakthroughCost(
+            stones = 9,
+            kina = 900_000,
+        ),
+        BreakthroughCost(
+            stones = 12,
+            kina = 1_400_000,
+        ),
+        BreakthroughCost(
+            stones = 15,
+            kina = 2_000_000,
+        ),
+        BreakthroughCost(
+            stones = 20,
+            kina = 3_000_000,
+        ),
+    )
+
+    val heroEnhancementCosts = listOf(
+        BreakthroughCost(
+            stones = 6,
+            kina = 1_000_000,
+        ),
+        BreakthroughCost(
+            stones = 9,
+            kina = 1_500_000,
+        ),
+        BreakthroughCost(
+            stones = 12,
+            kina = 2_400_000,
+        ),
+        BreakthroughCost(
+            stones = 15,
+            kina = 3_100_000,
+        ),
+        BreakthroughCost(
+            stones = 20,
+            kina = 7_300_000,
+        ),
     )
 }
