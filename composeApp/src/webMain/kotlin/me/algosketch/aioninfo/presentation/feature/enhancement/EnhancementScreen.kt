@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import me.algosketch.aioninfo.data.enhancement.Enhancement
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +45,7 @@ fun EnhancementScreen(
     var targetLevel by remember { mutableStateOf(0) }
     var expandedTarget by remember { mutableStateOf(false) }
 
-    val levels = listOf(67, 84)
+    val levels = remember { Enhancement.items.map { it.itemLevel } }
 
     var stonesData by remember { mutableStateOf(emptyList<Int>()) }
     var kinaData by remember { mutableStateOf(emptyList<Int>()) }
@@ -60,7 +61,7 @@ fun EnhancementScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "Aion 2 Enhancement Calculator",
+            "아이온2 강화 시뮬레이터",
             style = MaterialTheme.typography.headlineMedium
         )
 
@@ -72,7 +73,7 @@ fun EnhancementScreen(
                 value = currentLevel.toString(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Item Level") },
+                label = { Text("아이템 레벨") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLevel) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -107,7 +108,7 @@ fun EnhancementScreen(
                     value = currentLevel.toString(),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("current level") },
+                    label = { Text("현재 강화 단계") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCurrent) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -140,7 +141,7 @@ fun EnhancementScreen(
                     value = targetLevel.toString(),
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("target level") },
+                    label = { Text("목표 강화 단계") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTarget) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -186,7 +187,7 @@ fun EnhancementScreen(
                 containerColor = Color(0xFF222222)
             ),
         ) {
-            Text("Calculate Cost")
+            Text("계산하기")
         }
 
         if (stonesData.isNotEmpty()) {
