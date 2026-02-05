@@ -34,6 +34,8 @@ fun EnhancementScreen(
 
     var stonesData by remember { mutableStateOf(emptyList<Int>()) }
     var kinaData by remember { mutableStateOf(emptyList<Int>()) }
+    var breakthroughStonesData by remember { mutableStateOf(emptyList<Int>()) }
+    var breakthroughKinaData by remember { mutableStateOf(emptyList<Int>()) }
 
     LaunchedEffect(levels) {
         selectedLevel = levels.first()
@@ -166,6 +168,8 @@ fun EnhancementScreen(
                 val simulations = 10000
                 val resultStonesList = mutableListOf<Int>()
                 val resultKinaList = mutableListOf<Int>()
+                val resultBreakthroughStonesList = mutableListOf<Int>()
+                val resultBreakthroughKinaList = mutableListOf<Int>()
 
                 repeat(simulations) {
                     val (enhancement, breakthrough) = viewModel.simulate(
@@ -176,10 +180,14 @@ fun EnhancementScreen(
 
                     resultStonesList.add(enhancement.stones)
                     resultKinaList.add(enhancement.kina)
+                    resultBreakthroughStonesList.add(breakthrough.stones)
+                    resultBreakthroughKinaList.add(breakthrough.kina)
                 }
 
                 stonesData = resultStonesList
                 kinaData = resultKinaList
+                breakthroughStonesData = resultBreakthroughStonesList
+                breakthroughKinaData = resultBreakthroughKinaList
             },
             colors = ButtonDefaults.buttonColors().copy(
                 containerColor = Color(0xFF222222)
@@ -189,10 +197,44 @@ fun EnhancementScreen(
         }
 
         if (stonesData.isNotEmpty()) {
+            val avgStones = stonesData.average().toLong()
+            val avgKina = kinaData.average().toLong()
+            val avgBreakthroughStones = breakthroughStonesData.average().toLong()
+            val avgBreakthroughKina = breakthroughKinaData.average().toLong()
+
+            Text(
+                "예상 비용",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Text("강화석: ${formatNumberWithComma(avgStones)}개")
+            Text("돌파석: ${formatNumberWithComma(avgBreakthroughStones)}개")
+            Text("키나: ${formatNumberWithComma(avgKina + avgBreakthroughKina)}")
+
+            Text(
+                "강화 비용 분포",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
             DualCdfChart(
                 stonesData = stonesData,
-                kinaData = kinaData
+                kinaData = kinaData,
+            )
+
+            Text(
+                "돌파 비용 분포",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            DualCdfChart(
+                stonesData = breakthroughStonesData,
+                kinaData = breakthroughKinaData,
+                stonesLabel = "돌파석",
             )
         }
     }
+}
+
+private fun formatNumberWithComma(value: Long): String {
+    return value.toString().reversed().chunked(3).joinToString(",").reversed()
 }

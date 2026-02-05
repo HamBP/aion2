@@ -30,6 +30,8 @@ fun DualCdfChart(
     stonesData: List<Int>,
     kinaData: List<Int>,
     modifier: Modifier = Modifier,
+    stonesLabel: String = "강화석",
+    kinaLabel: String = "키나",
 ) {
     val stonesColor = Color(0xFF2196F3) // Blue
     val kinaColor = Color(0xFFFF9800) // Orange
@@ -75,7 +77,7 @@ fun DualCdfChart(
                     drawRect(color = stonesColor)
                 }
                 Text(
-                    text = " 강화석",
+                    text = " $stonesLabel",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -84,7 +86,7 @@ fun DualCdfChart(
                     drawRect(color = kinaColor)
                 }
                 Text(
-                    text = " 키나",
+                    text = " $kinaLabel",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
