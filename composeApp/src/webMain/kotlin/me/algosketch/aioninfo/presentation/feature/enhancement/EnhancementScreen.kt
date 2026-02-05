@@ -18,18 +18,31 @@ fun EnhancementScreen(
     viewModel: EnhancementViewModel = EnhancementViewModel() // TODO: DI
 ) {
     var selectedLevel by remember { mutableStateOf(50) }
+    val isUnique by remember { derivedStateOf { selectedLevel <= 92 } }
+
     var expandedLevel by remember { mutableStateOf(false) }
 
-    var currentLevel by remember { mutableStateOf(0) }
+    var enhancementLevels by remember { mutableStateOf(uniqueEnhancementLevels)}
+
+    var currentEnhancement by remember { mutableStateOf(EnhancementLevel(0, 0)) }
     var expandedCurrent by remember { mutableStateOf(false) }
 
-    var targetLevel by remember { mutableStateOf(0) }
+    var targetEnhancement by remember { mutableStateOf(EnhancementLevel(0, 0)) }
     var expandedTarget by remember { mutableStateOf(false) }
 
     val levels = remember { EnhancementRepository.items.map { it.itemLevel } }
 
     var stonesData by remember { mutableStateOf(emptyList<Int>()) }
     var kinaData by remember { mutableStateOf(emptyList<Int>()) }
+
+    LaunchedEffect(levels) {
+        selectedLevel = levels.first()
+    }
+
+    LaunchedEffect(isUnique) {
+        targetEnhancement = if (isUnique) EnhancementLevel(15, 5) else EnhancementLevel(20, 5)
+        enhancementLevels = if (isUnique) uniqueEnhancementLevels else heroEnhancementLevels
+    }
 
     Column(
         modifier = Modifier
@@ -51,7 +64,7 @@ fun EnhancementScreen(
             onExpandedChange = { expandedLevel = it }
         ) {
             OutlinedTextField(
-                value = currentLevel.toString(),
+                value = selectedLevel.toString(),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("아이템 레벨") },
@@ -86,7 +99,7 @@ fun EnhancementScreen(
                 onExpandedChange = { expandedCurrent = it }
             ) {
                 OutlinedTextField(
-                    value = currentLevel.toString(),
+                    value = currentEnhancement.toString(),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("현재 강화 단계") },
@@ -100,11 +113,11 @@ fun EnhancementScreen(
                     expanded = expandedCurrent,
                     onDismissRequest = { expandedCurrent = false }
                 ) {
-                    (0..15).forEach { level ->
+                    enhancementLevels.forEach { level ->
                         DropdownMenuItem(
                             text = { Text(level.toString()) },
                             onClick = {
-                                currentLevel = level
+                                currentEnhancement = level
                                 expandedCurrent = false
                             }
                         )
@@ -119,7 +132,7 @@ fun EnhancementScreen(
                 onExpandedChange = { expandedTarget = it }
             ) {
                 OutlinedTextField(
-                    value = targetLevel.toString(),
+                    value = targetEnhancement.toString(),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("목표 강화 단계") },
@@ -132,11 +145,11 @@ fun EnhancementScreen(
                     expanded = expandedTarget,
                     onDismissRequest = { expandedTarget = false }
                 ) {
-                    (0..15).forEach { level ->
+                    enhancementLevels.forEach { level ->
                         DropdownMenuItem(
                             text = { Text(level.toString()) },
                             onClick = {
-                                targetLevel = level
+                                targetEnhancement = level
                                 expandedTarget = false
                             }
                         )
@@ -157,8 +170,8 @@ fun EnhancementScreen(
                 repeat(simulations) {
                     val (enhancement, breakthrough) = viewModel.simulate(
                         itemLevel = selectedLevel,
-                        startEnhancement = EnhancementLevel(enhancementLevel = currentLevel, breakthroughLevel = 0),
-                        targetEnhancement = EnhancementLevel(enhancementLevel = targetLevel, breakthroughLevel = 0),
+                        startEnhancement = currentEnhancement,
+                        targetEnhancement = targetEnhancement,
                     )
 
                     resultStonesList.add(enhancement.stones)
