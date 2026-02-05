@@ -5,10 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,8 +72,9 @@ fun DualCdfChart(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Spacer(modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Canvas(modifier = Modifier.size(12.dp)) {
                     drawRect(color = stonesColor)
@@ -127,17 +130,9 @@ fun DualCdfChart(
 
             // Draw bottom X-axis (강화석)
             drawLine(
-                color = stonesColor,
+                color = axisColor,
                 start = Offset(paddingLeft, paddingTop + chartHeight),
                 end = Offset(paddingLeft + chartWidth, paddingTop + chartHeight),
-                strokeWidth = 2f
-            )
-
-            // Draw top X-axis (키나)
-            drawLine(
-                color = kinaColor,
-                start = Offset(paddingLeft, paddingTop),
-                end = Offset(paddingLeft + chartWidth, paddingTop),
                 strokeWidth = 2f
             )
 

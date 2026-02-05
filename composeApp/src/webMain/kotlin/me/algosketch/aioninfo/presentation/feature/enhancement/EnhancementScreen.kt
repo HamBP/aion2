@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.algosketch.aioninfo.data.enhancement.EnhancementRepository
 
@@ -53,12 +54,14 @@ fun EnhancementScreen(
             .background(Color.White)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            "아이온2 강화 시뮬레이터",
-            style = MaterialTheme.typography.headlineMedium
+            modifier = Modifier.fillMaxWidth(),
+            text = "아이온2 강화 시뮬레이터",
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
         )
 
         ExposedDropdownMenuBox(
@@ -203,19 +206,30 @@ fun EnhancementScreen(
             val avgBreakthroughKina = breakthroughKinaData.average().toLong()
 
             Text(
-                "예상 비용",
+                "총 예상 비용",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            Text("강화석: ${formatNumberWithComma(avgStones)}개")
-            Text("돌파석: ${formatNumberWithComma(avgBreakthroughStones)}개")
-            Text("키나: ${formatNumberWithComma(avgKina + avgBreakthroughKina)}")
+            Column {
+                Text("강화석: ${formatNumberWithComma(avgStones)}개")
+                Text("돌파석: ${formatNumberWithComma(avgBreakthroughStones)}개")
+                Text("키나: ${formatNumberWithComma(avgKina + avgBreakthroughKina)}")
+            }
 
             Text(
                 "강화 비용 분포",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
+            Text(
+                "예상 비용",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Column {
+                Text("강화석: ${formatNumberWithComma(avgStones)}개")
+                Text("키나: ${formatNumberWithComma(avgKina)}")
+            }
             DualCdfChart(
                 stonesData = stonesData,
                 kinaData = kinaData,
@@ -226,6 +240,15 @@ fun EnhancementScreen(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
+            Text(
+                "예상 비용",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Column {
+                Text("돌파석: ${formatNumberWithComma(avgBreakthroughStones)}개")
+                Text("키나: ${formatNumberWithComma(avgBreakthroughKina)}")
+            }
             DualCdfChart(
                 stonesData = breakthroughStonesData,
                 kinaData = breakthroughKinaData,
