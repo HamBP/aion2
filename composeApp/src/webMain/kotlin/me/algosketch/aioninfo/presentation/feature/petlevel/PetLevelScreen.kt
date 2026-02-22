@@ -82,10 +82,31 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = PetLevelViewModel()) {
 
         Button(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            onClick = { /* TODO: 기댓값 계산 */ },
+            onClick = { viewModel.calculate() },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)),
         ) {
             Text("계산하기")
+        }
+
+        viewModel.result?.let { result ->
+            HorizontalDivider()
+
+            Text("예상 비용", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                ResultCard(
+                    modifier = Modifier.weight(1f),
+                    label = "평균 결정",
+                    value = "${formatNumber(result.avgCrystals.toLong())}개",
+                )
+                ResultCard(
+                    modifier = Modifier.weight(1f),
+                    label = "평균 키나",
+                    value = formatNumber(result.avgKina.toLong()),
+                )
+            }
+
+            Text("비용 분포 (결정 기준)", style = MaterialTheme.typography.titleMedium)
+            PercentileTable(data = result.crystalsData, unit = "개")
         }
     }
 
@@ -158,6 +179,55 @@ private fun SlotCard(
         }
     }
 }
+
+@Composable
+private fun ResultCard(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+            Spacer(Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun PercentileTable(data: List<Int>, unit: String) {
+    val sorted = remember(data) { data.sorted() }
+    val percentiles = listOf(25, 50, 75, 90, 99)
+
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            percentiles.forEach { p ->
+                val index = ((p / 100.0) * sorted.size).toInt().coerceAtMost(sorted.size - 1)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("${p}% 이하", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(
+                        "${formatNumber(sorted[index].toLong())}$unit",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatNumber(value: Long): String =
+    value.toString().reversed().chunked(3).joinToString(",").reversed()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -256,7 +326,7 @@ private fun SlotEditDialog(
 
                 OutlinedButton(
                     onClick = {
-                        candidates = candidates + OptionCandidate(PetOption.ACCURACY, 0)
+                        candidates = candidates + OptionCandidate(PetOption.ADDITIONAL_ACCURACY, 0)
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
