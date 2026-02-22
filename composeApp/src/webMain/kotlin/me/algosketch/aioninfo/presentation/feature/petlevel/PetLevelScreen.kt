@@ -17,40 +17,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-enum class PetRace(val displayName: String) {
-    INTELLECT("지성"),
-    WILD("야성"),
-    NATURE("자연"),
-    TRANSFORM("변형"),
-    SPECIAL("특수"),
-}
-
-// 더미 옵션 목록 - 추후 실제 데이터로 교체
-enum class PetOption(val displayName: String) {
-    ACCURACY("명중"),
-    EVASION("회피"),
-    CRITICAL("치명타"),
-    ATTACK("공격력"),
-    DEFENSE("방어력"),
-    HP("체력"),
-    MAGIC_ATTACK("마법 공격력"),
-    MAGIC_DEFENSE("마법 방어력"),
-}
-
-data class OptionCandidate(
-    val option: PetOption,
-    val minValue: Int,
-)
-
-data class SlotConfig(
-    val candidates: List<OptionCandidate> = emptyList(),
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PetLevelScreen(petLevelViewModel: PetLevelViewModel = PetLevelViewModel()) {
-    var selectedRace by remember { mutableStateOf(PetRace.INTELLECT) }
-    var slots by remember { mutableStateOf(List(9) { SlotConfig() }) }
+fun PetLevelScreen(viewModel: PetLevelViewModel = PetLevelViewModel()) {
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
 
     Column(
@@ -77,8 +46,8 @@ fun PetLevelScreen(petLevelViewModel: PetLevelViewModel = PetLevelViewModel()) {
         ) {
             PetRace.entries.forEach { race ->
                 FilterChip(
-                    selected = race == selectedRace,
-                    onClick = { selectedRace = race },
+                    selected = race == viewModel.selectedRace,
+                    onClick = { viewModel.selectRace(race) },
                     label = { Text(race.displayName) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF222222),
@@ -103,7 +72,7 @@ fun PetLevelScreen(petLevelViewModel: PetLevelViewModel = PetLevelViewModel()) {
                             modifier = Modifier.weight(1f),
                             slotNumber = slotNumber,
                             isSpecial = slotNumber % 3 == 0,
-                            slotConfig = slots[index],
+                            slotConfig = viewModel.slots[index],
                             onClick = { editingSlotIndex = index },
                         )
                     }
@@ -124,10 +93,10 @@ fun PetLevelScreen(petLevelViewModel: PetLevelViewModel = PetLevelViewModel()) {
         SlotEditDialog(
             slotNumber = index + 1,
             isSpecial = (index + 1) % 3 == 0,
-            slotConfig = slots[index],
+            slotConfig = viewModel.slots[index],
             onDismiss = { editingSlotIndex = null },
             onConfirm = { newConfig ->
-                slots = slots.mapIndexed { i, s -> if (i == index) newConfig else s }
+                viewModel.updateSlot(index, newConfig)
                 editingSlotIndex = null
             },
         )
