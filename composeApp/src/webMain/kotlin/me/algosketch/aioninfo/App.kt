@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import me.algosketch.aioninfo.presentation.feature.enhancement.EnhancementScreen
+import me.algosketch.aioninfo.presentation.feature.petlevel.PetLevelScreen
 import org.jetbrains.compose.resources.Font
 
 val NotoSansKR: FontFamily
@@ -58,7 +59,8 @@ private fun appTypography(): Typography {
 fun App() {
     MaterialTheme(typography = appTypography()) {
         ContentArea {
-            EnhancementScreen()
+            PetLevelScreen()
+//            EnhancementScreen()
         }
     }
 }
