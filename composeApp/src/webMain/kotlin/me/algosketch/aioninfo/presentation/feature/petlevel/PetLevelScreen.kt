@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PetLevelScreen(viewModel: PetLevelViewModel = PetLevelViewModel()) {
     var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
+    val slots by viewModel.slots.collectAsState()
 
     Column(
         modifier = Modifier
@@ -72,7 +73,7 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = PetLevelViewModel()) {
                             modifier = Modifier.weight(1f),
                             slotNumber = slotNumber,
                             isSpecial = slotNumber % 3 == 0,
-                            slotConfig = viewModel.slots[index],
+                            slotConfig = slots[index],
                             onClick = { editingSlotIndex = index },
                         )
                     }
@@ -114,7 +115,7 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = PetLevelViewModel()) {
         SlotEditDialog(
             slotNumber = index + 1,
             isSpecial = (index + 1) % 3 == 0,
-            slotConfig = viewModel.slots[index],
+            slotConfig = slots[index],
             onDismiss = { editingSlotIndex = null },
             onConfirm = { newConfig ->
                 viewModel.updateSlot(index, newConfig)
@@ -153,13 +154,6 @@ private fun SlotCard(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
             )
-            if (isSpecial) {
-                Text(
-                    text = "★특수",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9B59B6),
-                )
-            }
             Spacer(Modifier.height(4.dp))
             if (slotConfig.candidates.isEmpty()) {
                 Text(

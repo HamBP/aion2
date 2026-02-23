@@ -1,9 +1,10 @@
 package me.algosketch.aioninfo.presentation.feature.petlevel
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlin.random.Random
 
 enum class PetRace(val displayName: String) {
@@ -99,7 +100,7 @@ class PetLevelViewModel {
     var selectedRace by mutableStateOf(PetRace.INTELLECT)
         private set
 
-    val slots = mutableStateListOf(*Array(9) { SlotConfig() })
+    val slots = MutableStateFlow(listOf(*Array(9) { SlotConfig() }))
 
     var result by mutableStateOf<CalculationResult?>(null)
         private set
@@ -109,11 +110,15 @@ class PetLevelViewModel {
     }
 
     fun updateSlot(index: Int, config: SlotConfig) {
-        slots[index] = config
+        slots.update {
+            val slotsToUpdate = it.toMutableList()
+            slotsToUpdate[index] = config
+            slotsToUpdate
+        }
     }
 
     fun calculate() {
-        val targetIndices = slots.indices.filter { slots[it].candidates.isNotEmpty() }
+        val targetIndices = slots.value.indices.filter { slots.value[it].candidates.isNotEmpty() }
         if (targetIndices.isEmpty()) return
 
         val simulations = 10000
@@ -121,7 +126,7 @@ class PetLevelViewModel {
         val kinaList = mutableListOf<Int>()
 
         repeat(simulations) {
-            val (crystals, kina) = simulate(slots, targetIndices)
+            val (crystals, kina) = simulate(slots.value, targetIndices)
             crystalsList.add(crystals)
             kinaList.add(kina)
         }
