@@ -15,6 +15,7 @@ enum class SlotType(val totalOptions: Int, val validOptions: List<PetOption>) {
         PetOption.ADDITIONAL_ACCURACY,
         PetOption.CRITICAL,
         PetOption.CRITICAL_RESISTANCE,
+        PetOption.BLOCK,
         PetOption.ADDITIONAL_EVASION,
     )),
     SPECIAL_6(18, listOf(
@@ -24,6 +25,7 @@ enum class SlotType(val totalOptions: Int, val validOptions: List<PetOption>) {
         PetOption.ADDITIONAL_ACCURACY,
         PetOption.CRITICAL,
         PetOption.CRITICAL_RESISTANCE,
+        PetOption.BLOCK,
         PetOption.ADDITIONAL_EVASION,
     )),
 }

@@ -107,8 +107,8 @@ class PetLevelViewModel : ViewModel() {
         preLockedSlots = count
     }
 
-    fun updateRequirements(list: List<OptionRequirement>) {
-        requirements.value = list
+    fun updateRequirementsForType(slotType: SlotType, list: List<OptionRequirement>) {
+        requirements.value = requirements.value.filter { it.slotType != slotType } + list
     }
 
     fun calculate() {
@@ -150,6 +150,7 @@ class PetLevelViewModel : ViewModel() {
                 if (locked[slotIndex]) continue
                 val (option, value) = rollSlot(SLOT_TYPES[slotIndex]) ?: continue
                 val idx = requirements.indices.firstOrNull { i ->
+                    requirements[i].slotType == SLOT_TYPES[slotIndex] &&
                     requirements[i].option == option &&
                     value >= requirements[i].minValue &&
                     remaining[i] > 0

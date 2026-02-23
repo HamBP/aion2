@@ -76,40 +76,35 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
             }
         }
 
-        // 목표 설정
+        // 목표 설정 - 슬롯 타입별 3개 섹션
         Text("목표 설정", style = MaterialTheme.typography.titleMedium)
-        Text(
-            text = "어느 슬롯에 뜨든 조건을 만족한 슬롯을 lock합니다.",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray,
+
+        RequirementSection(
+            title = "일반 슬롯",
+            subtitle = "슬롯 1, 2, 4, 5, 7, 8 · 최대 6개",
+            slotType = SlotType.NORMAL,
+            requirements = requirements.filter { it.slotType == SlotType.NORMAL },
+            maxTotalCount = 6,
+            onUpdateRequirements = { viewModel.updateRequirementsForType(SlotType.NORMAL, it) },
         )
 
-        requirements.forEachIndexed { i, req ->
-            RequirementRow(
-                req = req,
-                onUpdate = { updated ->
-                    viewModel.updateRequirements(
-                        requirements.mapIndexed { idx, r -> if (idx == i) updated else r }
-                    )
-                },
-                onDelete = {
-                    viewModel.updateRequirements(
-                        requirements.filterIndexed { idx, _ -> idx != i }
-                    )
-                },
-            )
-        }
+        RequirementSection(
+            title = "특수 슬롯 3, 9",
+            subtitle = "슬롯 3, 9 · 최대 2개",
+            slotType = SlotType.SPECIAL_39,
+            requirements = requirements.filter { it.slotType == SlotType.SPECIAL_39 },
+            maxTotalCount = 2,
+            onUpdateRequirements = { viewModel.updateRequirementsForType(SlotType.SPECIAL_39, it) },
+        )
 
-        OutlinedButton(
-            onClick = {
-                viewModel.updateRequirements(
-                    requirements + OptionRequirement(PetOption.ADDITIONAL_ACCURACY, 0.0, 1)
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("+ 목표 추가")
-        }
+        RequirementSection(
+            title = "특수 슬롯 6",
+            subtitle = "슬롯 6 · 최대 1개",
+            slotType = SlotType.SPECIAL_6,
+            requirements = requirements.filter { it.slotType == SlotType.SPECIAL_6 },
+            maxTotalCount = 1,
+            onUpdateRequirements = { viewModel.updateRequirementsForType(SlotType.SPECIAL_6, it) },
+        )
 
         Button(
             modifier = Modifier.fillMaxWidth(),
@@ -160,10 +155,84 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun RequirementSection(
+    title: String,
+    subtitle: String,
+    slotType: SlotType,
+    requirements: List<OptionRequirement>,
+    maxTotalCount: Int,
+    onUpdateRequirements: (List<OptionRequirement>) -> Unit,
+) {
+    val totalCount = requirements.sumOf { it.count }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            }
+
+            if (totalCount > maxTotalCount) {
+                Text(
+                    text = "목표 슬롯 합계(${totalCount})가 최대(${maxTotalCount})를 초과합니다.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFFCC0000),
+                )
+            }
+
+            requirements.forEachIndexed { i, req ->
+                RequirementRow(
+                    req = req,
+                    availableOptions = slotType.validOptions,
+                    showCount = maxTotalCount > 1,
+                    onUpdate = { updated ->
+                        onUpdateRequirements(requirements.mapIndexed { idx, r -> if (idx == i) updated else r })
+                    },
+                    onDelete = {
+                        onUpdateRequirements(requirements.filterIndexed { idx, _ -> idx != i })
+                    },
+                )
+            }
+
+            if (totalCount < maxTotalCount) {
+                OutlinedButton(
+                    onClick = {
+                        onUpdateRequirements(
+                            requirements + OptionRequirement(
+                                slotType = slotType,
+                                option = slotType.validOptions.first(),
+                                minValue = 0.0,
+                                count = 1,
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("+ 목표 추가")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun RequirementRow(
     req: OptionRequirement,
+    availableOptions: List<PetOption>,
     onUpdate: (OptionRequirement) -> Unit,
     onDelete: () -> Unit,
+    showCount: Boolean = true,
 ) {
     var expandedOption by remember { mutableStateOf(false) }
     var minValueText by remember(req.minValue) { mutableStateOf(formatDouble(req.minValue)) }
@@ -195,7 +264,7 @@ private fun RequirementRow(
                 expanded = expandedOption,
                 onDismissRequest = { expandedOption = false },
             ) {
-                PetOption.entries.forEach { option ->
+                availableOptions.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.displayName) },
                         onClick = {
@@ -228,6 +297,7 @@ private fun RequirementRow(
             },
             label = { Text("개", fontSize = 12.sp) },
             textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
+            readOnly = !showCount,
         )
 
         IconButton(onClick = onDelete) {
