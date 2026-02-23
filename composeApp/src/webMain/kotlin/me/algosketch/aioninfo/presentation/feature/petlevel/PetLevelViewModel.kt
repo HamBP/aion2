@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlin.random.Random
 
 enum class PetRace(val displayName: String) {
@@ -33,13 +32,7 @@ enum class PetOption(val displayName: String) {
     BLOCK("막기"),
 }
 
-data class ValueRange(val min: Int, val max: Int) {
-    fun probabilityAtLeast(minValue: Int): Double = when {
-        minValue <= min -> 1.0
-        minValue > max -> 0.0
-        else -> (max - minValue + 1).toDouble() / (max - min + 1)
-    }
-}
+data class ValueRange(val min: Int, val max: Int)
 
 // 유효 옵션별 등급별 수치 범위
 val optionValueRanges: Map<PetOption, Map<PetGrade, ValueRange>> = mapOf(
@@ -67,7 +60,6 @@ val optionValueRanges: Map<PetOption, Map<PetGrade, ValueRange>> = mapOf(
 
 object PetConstants {
     const val TOTAL_OPTIONS = 14
-    val VALID_GRADE_PROBABILITY = PetGrade.HERO.probability + PetGrade.UNIQUE.probability // 0.20
 
     // 잠근 슬롯 수 → 필요한 결정 개수 (인덱스 = 잠근 슬롯 수)
     val CRYSTALS_BY_LOCKED = listOf(45, 50, 55, 75, 120, 215, 310, 405, 500)
@@ -75,19 +67,14 @@ object PetConstants {
     // 키나 = 결정 × 200
     const val KINA_PER_CRYSTAL = 200
 
-    fun getCost(lockedCount: Int): Pair<Int, Int> {
-        val crystals = CRYSTALS_BY_LOCKED[lockedCount]
-        return crystals to crystals * KINA_PER_CRYSTAL
-    }
+    fun getCrystals(lockedCount: Int): Int = CRYSTALS_BY_LOCKED[lockedCount]
 }
 
-data class OptionCandidate(
+// 옵션 N개 이상 M슬롯 목표
+data class OptionRequirement(
     val option: PetOption,
     val minValue: Int,
-)
-
-data class SlotConfig(
-    val candidates: List<OptionCandidate> = emptyList(),
+    val count: Int,
 )
 
 data class CalculationResult(
@@ -101,7 +88,11 @@ class PetLevelViewModel : ViewModel() {
     var selectedRace by mutableStateOf(PetRace.INTELLECT)
         private set
 
-    val slots = MutableStateFlow(listOf(*Array(9) { SlotConfig() }))
+    // 굴릴 일반 슬롯 수 (1~6)
+    var activeSlots by mutableStateOf(6)
+        private set
+
+    val requirements = MutableStateFlow<List<OptionRequirement>>(emptyList())
 
     var result by mutableStateOf<CalculationResult?>(null)
         private set
@@ -110,70 +101,69 @@ class PetLevelViewModel : ViewModel() {
         selectedRace = race
     }
 
-    fun updateSlot(index: Int, config: SlotConfig) {
-        slots.update {
-            val slotsToUpdate = it.toMutableList()
-            slotsToUpdate[index] = config
-            slotsToUpdate
-        }
+    fun setActiveSlots(count: Int) {
+        activeSlots = count
+    }
+
+    fun updateRequirements(list: List<OptionRequirement>) {
+        requirements.value = list
     }
 
     fun calculate() {
-        val targetIndices = slots.value.indices.filter { slots.value[it].candidates.isNotEmpty() }
-        if (targetIndices.isEmpty()) return
+        val reqs = requirements.value
+        val totalRequired = reqs.sumOf { it.count }
+        if (reqs.isEmpty() || totalRequired > activeSlots) return
 
         val simulations = 10000
         val crystalsList = mutableListOf<Int>()
-        val kinaList = mutableListOf<Int>()
 
         repeat(simulations) {
-            val (crystals, kina) = simulate(slots.value, targetIndices)
-            crystalsList.add(crystals)
-            kinaList.add(kina)
+            crystalsList.add(simulate(reqs, activeSlots))
         }
 
         result = CalculationResult(
             avgCrystals = crystalsList.average(),
-            avgKina = kinaList.average(),
+            avgKina = crystalsList.average() * PetConstants.KINA_PER_CRYSTAL,
             crystalsData = crystalsList,
-            kinaData = kinaList,
+            kinaData = crystalsList.map { it * PetConstants.KINA_PER_CRYSTAL },
         )
     }
 
-    private fun simulate(slots: List<SlotConfig>, targetIndices: List<Int>): Pair<Int, Int> {
-        val locked = MutableList(9) { false }
+    private fun simulate(requirements: List<OptionRequirement>, activeSlots: Int): Int {
+        val remaining = requirements.map { it.count }.toMutableList()
+        var lockedCount = 0
         var totalCrystals = 0
-        var totalKina = 0
 
-        while (targetIndices.any { !locked[it] }) {
-            val lockedCount = locked.count { it }
-            val (crystals, kina) = PetConstants.getCost(lockedCount)
-            totalCrystals += crystals
-            totalKina += kina
+        while (remaining.any { it > 0 }) {
+            totalCrystals += PetConstants.getCrystals(lockedCount)
 
-            for (i in targetIndices) {
-                if (locked[i]) continue
-                if (rollSlot(slots[i])) locked[i] = true
+            val unlocked = activeSlots - lockedCount
+            repeat(unlocked) {
+                val (option, value) = rollSlot() ?: return@repeat
+                val idx = requirements.indices.firstOrNull { i ->
+                    requirements[i].option == option &&
+                    value >= requirements[i].minValue &&
+                    remaining[i] > 0
+                } ?: return@repeat
+                remaining[idx]--
+                lockedCount++
             }
         }
 
-        return totalCrystals to totalKina
+        return totalCrystals
     }
 
-    private fun rollSlot(config: SlotConfig): Boolean {
+    private fun rollSlot(): Pair<PetOption, Int>? {
         val grade = rollGrade()
-        if (grade != PetGrade.HERO && grade != PetGrade.UNIQUE) return false
+        if (grade != PetGrade.HERO && grade != PetGrade.UNIQUE) return null
 
         val optionIndex = Random.nextInt(PetConstants.TOTAL_OPTIONS)
-        if (optionIndex >= PetOption.entries.size) return false // 무효 옵션
+        if (optionIndex >= PetOption.entries.size) return null
 
         val option = PetOption.entries[optionIndex]
-        val candidate = config.candidates.find { it.option == option } ?: return false
-
         val range = optionValueRanges[option]!![grade]!!
         val value = Random.nextInt(range.min, range.max + 1)
-
-        return value >= candidate.minValue
+        return option to value
     }
 
     private fun rollGrade(): PetGrade {

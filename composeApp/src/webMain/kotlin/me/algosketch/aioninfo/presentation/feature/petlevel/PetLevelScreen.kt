@@ -1,8 +1,9 @@
 package me.algosketch.aioninfo.presentation.feature.petlevel
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,8 +18,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel() }) {
-    var editingSlotIndex by remember { mutableStateOf<Int?>(null) }
-    val slots by viewModel.slots.collectAsState()
+    val requirements by viewModel.requirements.collectAsState()
+    val totalRequired = requirements.sumOf { it.count }
 
     Column(
         modifier = Modifier
@@ -55,32 +56,74 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
             }
         }
 
-        // 슬롯 그리드
-        Text("이해도 슬롯", style = MaterialTheme.typography.titleMedium)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (row in 0 until 3) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    for (col in 0 until 3) {
-                        val index = row * 3 + col
-                        val slotNumber = index + 1
-                        SlotCard(
-                            modifier = Modifier.weight(1f),
-                            slotNumber = slotNumber,
-                            isSpecial = slotNumber % 3 == 0,
-                            slotConfig = slots[index],
-                            onClick = { editingSlotIndex = index },
-                        )
-                    }
-                }
+        // 활성 슬롯 수 (일반 슬롯 1~6개)
+        Text("굴릴 일반 슬롯 수", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "3, 6, 9번 슬롯(특수)을 제외한 일반 슬롯 수입니다.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            (1..6).forEach { count ->
+                FilterChip(
+                    selected = count == viewModel.activeSlots,
+                    onClick = { viewModel.setActiveSlots(count) },
+                    label = { Text("${count}개") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF222222),
+                        selectedLabelColor = Color.White,
+                    ),
+                )
             }
         }
 
+        // 목표 설정
+        Text("목표 설정", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "어느 슬롯에 뜨든 조건을 만족한 슬롯을 lock합니다.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+        )
+
+        if (totalRequired > viewModel.activeSlots) {
+            Text(
+                text = "총 목표 슬롯 수(${totalRequired}개)가 활성 슬롯 수(${viewModel.activeSlots}개)를 초과합니다.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFCC0000),
+            )
+        }
+
+        requirements.forEachIndexed { i, req ->
+            RequirementRow(
+                req = req,
+                onUpdate = { updated ->
+                    viewModel.updateRequirements(
+                        requirements.mapIndexed { idx, r -> if (idx == i) updated else r }
+                    )
+                },
+                onDelete = {
+                    viewModel.updateRequirements(
+                        requirements.filterIndexed { idx, _ -> idx != i }
+                    )
+                },
+            )
+        }
+
+        OutlinedButton(
+            onClick = {
+                viewModel.updateRequirements(
+                    requirements + OptionRequirement(PetOption.ADDITIONAL_ACCURACY, 0, 1)
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("+ 목표 추가")
+        }
+
         Button(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             onClick = { viewModel.calculate() },
+            enabled = requirements.isNotEmpty() && totalRequired in 1..viewModel.activeSlots,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)),
         ) {
             Text("계산하기")
@@ -107,66 +150,80 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
             PercentileTable(data = result.crystalsData, unit = "개")
         }
     }
-
-    editingSlotIndex?.let { index ->
-        SlotEditDialog(
-            slotNumber = index + 1,
-            isSpecial = (index + 1) % 3 == 0,
-            slotConfig = slots[index],
-            onDismiss = { editingSlotIndex = null },
-            onConfirm = { newConfig ->
-                viewModel.updateSlot(index, newConfig)
-                editingSlotIndex = null
-            },
-        )
-    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SlotCard(
-    modifier: Modifier = Modifier,
-    slotNumber: Int,
-    isSpecial: Boolean,
-    slotConfig: SlotConfig,
-    onClick: () -> Unit,
+private fun RequirementRow(
+    req: OptionRequirement,
+    onUpdate: (OptionRequirement) -> Unit,
+    onDelete: () -> Unit,
 ) {
-    val borderColor = if (isSpecial) Color(0xFF9B59B6) else Color(0xFFCCCCCC)
-    val bgColor = if (isSpecial) Color(0xFFF5EEFF) else Color(0xFFF9F9F9)
+    var expandedOption by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier
-            .aspectRatio(1f)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.5.dp, borderColor),
-        colors = CardDefaults.cardColors(containerColor = bgColor),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        ExposedDropdownMenuBox(
+            modifier = Modifier.weight(2f),
+            expanded = expandedOption,
+            onExpandedChange = { expandedOption = it },
         ) {
-            Text(
-                text = "슬롯 $slotNumber",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+            OutlinedTextField(
+                value = req.option.displayName,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("옵션", fontSize = 12.sp) },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedOption)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
             )
-            Spacer(Modifier.height(4.dp))
-            if (slotConfig.candidates.isEmpty()) {
-                Text(
-                    text = "미설정",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
-                )
-            } else {
-                slotConfig.candidates.forEach { candidate ->
-                    Text(
-                        text = "${candidate.option.displayName} ${candidate.minValue}+",
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
+            ExposedDropdownMenu(
+                expanded = expandedOption,
+                onDismissRequest = { expandedOption = false },
+            ) {
+                PetOption.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.displayName) },
+                        onClick = {
+                            onUpdate(req.copy(option = option))
+                            expandedOption = false
+                        },
                     )
                 }
             }
+        }
+
+        OutlinedTextField(
+            modifier = Modifier.weight(1f),
+            value = if (req.minValue == 0) "" else req.minValue.toString(),
+            onValueChange = { input ->
+                val value = input.filter { it.isDigit() }.toIntOrNull() ?: 0
+                onUpdate(req.copy(minValue = value))
+            },
+            label = { Text("이상", fontSize = 12.sp) },
+            textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.weight(1f),
+            value = req.count.toString(),
+            onValueChange = { input ->
+                val value = input.filter { it.isDigit() }.toIntOrNull() ?: 1
+                onUpdate(req.copy(count = value.coerceAtLeast(1)))
+            },
+            label = { Text("개", fontSize = 12.sp) },
+            textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
+        )
+
+        IconButton(onClick = onDelete) {
+            Text("✕", color = Color.Gray)
         }
     }
 }
@@ -219,123 +276,3 @@ private fun PercentileTable(data: List<Int>, unit: String) {
 
 private fun formatNumber(value: Long): String =
     value.toString().reversed().chunked(3).joinToString(",").reversed()
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SlotEditDialog(
-    slotNumber: Int,
-    isSpecial: Boolean,
-    slotConfig: SlotConfig,
-    onDismiss: () -> Unit,
-    onConfirm: (SlotConfig) -> Unit,
-) {
-    var candidates by remember { mutableStateOf(slotConfig.candidates) }
-    var expandedOptionIndex by remember { mutableStateOf<Int?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "슬롯 $slotNumber 설정${if (isSpecial) " ★특수" else ""}",
-                style = MaterialTheme.typography.titleMedium,
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = "후보 옵션 중 하나라도 조건을 만족하면 유효 슬롯으로 인정합니다.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                )
-
-                candidates.forEachIndexed { i, candidate ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ExposedDropdownMenuBox(
-                            modifier = Modifier.weight(1f),
-                            expanded = expandedOptionIndex == i,
-                            onExpandedChange = { expanded ->
-                                expandedOptionIndex = if (expanded) i else null
-                            },
-                        ) {
-                            OutlinedTextField(
-                                value = candidate.option.displayName,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("옵션", fontSize = 12.sp) },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedOptionIndex == i)
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expandedOptionIndex == i,
-                                onDismissRequest = { expandedOptionIndex = null },
-                            ) {
-                                PetOption.entries.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option.displayName) },
-                                        onClick = {
-                                            candidates = candidates.mapIndexed { idx, c ->
-                                                if (idx == i) c.copy(option = option) else c
-                                            }
-                                            expandedOptionIndex = null
-                                        },
-                                    )
-                                }
-                            }
-                        }
-
-                        OutlinedTextField(
-                            modifier = Modifier.width(72.dp),
-                            value = if (candidate.minValue == 0) "" else candidate.minValue.toString(),
-                            onValueChange = { input ->
-                                val value = input.filter { it.isDigit() }.toIntOrNull() ?: 0
-                                candidates = candidates.mapIndexed { idx, c ->
-                                    if (idx == i) c.copy(minValue = value) else c
-                                }
-                            },
-                            label = { Text("이상", fontSize = 12.sp) },
-                            textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
-                        )
-
-                        IconButton(
-                            onClick = {
-                                candidates = candidates.filterIndexed { idx, _ -> idx != i }
-                            },
-                        ) {
-                            Text("✕", color = Color.Gray)
-                        }
-                    }
-                }
-
-                OutlinedButton(
-                    onClick = {
-                        candidates = candidates + OptionCandidate(PetOption.ADDITIONAL_ACCURACY, 0)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("+ 후보 옵션 추가")
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(SlotConfig(candidates = candidates)) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)),
-            ) {
-                Text("확인")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        },
-    )
-}
