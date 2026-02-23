@@ -103,7 +103,7 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
         OutlinedButton(
             onClick = {
                 viewModel.updateRequirements(
-                    requirements + OptionRequirement(PetOption.ADDITIONAL_ACCURACY, 0, 1)
+                    requirements + OptionRequirement(PetOption.ADDITIONAL_ACCURACY, 0.0, 1)
                 )
             },
             modifier = Modifier.fillMaxWidth(),
@@ -166,6 +166,7 @@ private fun RequirementRow(
     onDelete: () -> Unit,
 ) {
     var expandedOption by remember { mutableStateOf(false) }
+    var minValueText by remember(req.minValue) { mutableStateOf(formatDouble(req.minValue)) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -198,7 +199,7 @@ private fun RequirementRow(
                     DropdownMenuItem(
                         text = { Text(option.displayName) },
                         onClick = {
-                            onUpdate(req.copy(option = option))
+                            onUpdate(req.copy(option = option, minValue = 0.0))
                             expandedOption = false
                         },
                     )
@@ -208,10 +209,11 @@ private fun RequirementRow(
 
         OutlinedTextField(
             modifier = Modifier.weight(1f),
-            value = if (req.minValue == 0) "" else req.minValue.toString(),
+            value = minValueText,
             onValueChange = { input ->
-                val value = input.filter { it.isDigit() }.toIntOrNull() ?: 0
-                onUpdate(req.copy(minValue = value))
+                val filtered = filterDoubleInput(input)
+                minValueText = filtered
+                onUpdate(req.copy(minValue = filtered.toDoubleOrNull() ?: 0.0))
             },
             label = { Text("이상", fontSize = 12.sp) },
             textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
@@ -282,3 +284,22 @@ private fun PercentileTable(data: List<Int>, unit: String) {
 
 private fun formatNumber(value: Long): String =
     value.toString().reversed().chunked(3).joinToString(",").reversed()
+
+// 소수점 불필요 시 정수로 표시 (0.0 → "", 30.0 → "30", 1.5 → "1.5")
+private fun formatDouble(value: Double): String = when {
+    value == 0.0 -> ""
+    value % 1.0 == 0.0 -> value.toInt().toString()
+    else -> value.toString()
+}
+
+// 숫자와 소수점 하나만 허용
+private fun filterDoubleInput(input: String): String {
+    var dotSeen = false
+    return input.filter { c ->
+        when {
+            c.isDigit() -> true
+            c == '.' && !dotSeen -> { dotSeen = true; true }
+            else -> false
+        }
+    }
+}
