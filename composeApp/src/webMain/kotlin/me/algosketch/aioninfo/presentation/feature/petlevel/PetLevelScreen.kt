@@ -19,7 +19,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel() }) {
     val requirements by viewModel.requirements.collectAsState()
-    val totalRequired = requirements.sumOf { it.count }
 
     Column(
         modifier = Modifier
@@ -56,18 +55,18 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
             }
         }
 
-        // 활성 슬롯 수 (일반 슬롯 1~6개)
-        Text("굴릴 일반 슬롯 수", style = MaterialTheme.typography.titleMedium)
+        // 이미 잠긴 슬롯 수
+        Text("이미 잠긴 슬롯 수", style = MaterialTheme.typography.titleMedium)
         Text(
-            text = "3, 6, 9번 슬롯(특수)을 제외한 일반 슬롯 수입니다.",
+            text = "굴리기 전부터 잠겨 있는 슬롯 수입니다. 비용 계산에 반영됩니다.",
             style = MaterialTheme.typography.bodySmall,
             color = Color.Gray,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            (1..6).forEach { count ->
+            (0..8).forEach { count ->
                 FilterChip(
-                    selected = count == viewModel.activeSlots,
-                    onClick = { viewModel.setActiveSlots(count) },
+                    selected = count == viewModel.preLockedSlots,
+                    onClick = { viewModel.setPreLockedSlots(count) },
                     label = { Text("${count}개") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF222222),
@@ -84,14 +83,6 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
             style = MaterialTheme.typography.bodySmall,
             color = Color.Gray,
         )
-
-        if (totalRequired > viewModel.activeSlots) {
-            Text(
-                text = "총 목표 슬롯 수(${totalRequired}개)가 활성 슬롯 수(${viewModel.activeSlots}개)를 초과합니다.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFCC0000),
-            )
-        }
 
         requirements.forEachIndexed { i, req ->
             RequirementRow(
@@ -123,7 +114,7 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = { viewModel.calculate() },
-            enabled = requirements.isNotEmpty() && totalRequired in 1..viewModel.activeSlots,
+            enabled = requirements.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)),
         ) {
             Text("계산하기")

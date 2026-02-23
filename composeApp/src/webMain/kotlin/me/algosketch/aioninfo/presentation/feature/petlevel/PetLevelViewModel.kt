@@ -88,8 +88,8 @@ class PetLevelViewModel : ViewModel() {
     var selectedRace by mutableStateOf(PetRace.INTELLECT)
         private set
 
-    // 굴릴 일반 슬롯 수 (1~6)
-    var activeSlots by mutableStateOf(6)
+    // 굴리기 전 이미 잠긴 슬롯 수 (0~8)
+    var preLockedSlots by mutableStateOf(0)
         private set
 
     val requirements = MutableStateFlow<List<OptionRequirement>>(emptyList())
@@ -101,8 +101,8 @@ class PetLevelViewModel : ViewModel() {
         selectedRace = race
     }
 
-    fun setActiveSlots(count: Int) {
-        activeSlots = count
+    fun setPreLockedSlots(count: Int) {
+        preLockedSlots = count
     }
 
     fun updateRequirements(list: List<OptionRequirement>) {
@@ -111,14 +111,13 @@ class PetLevelViewModel : ViewModel() {
 
     fun calculate() {
         val reqs = requirements.value
-        val totalRequired = reqs.sumOf { it.count }
-        if (reqs.isEmpty() || totalRequired > activeSlots) return
+        if (reqs.isEmpty()) return
 
         val simulations = 10000
         val crystalsList = mutableListOf<Int>()
 
         repeat(simulations) {
-            crystalsList.add(simulate(reqs, activeSlots))
+            crystalsList.add(simulate(reqs, preLockedSlots))
         }
 
         result = CalculationResult(
@@ -129,15 +128,15 @@ class PetLevelViewModel : ViewModel() {
         )
     }
 
-    private fun simulate(requirements: List<OptionRequirement>, activeSlots: Int): Int {
+    private fun simulate(requirements: List<OptionRequirement>, preLockedSlots: Int): Int {
         val remaining = requirements.map { it.count }.toMutableList()
-        var lockedCount = 0
+        var lockedCount = preLockedSlots
         var totalCrystals = 0
 
         while (remaining.any { it > 0 }) {
             totalCrystals += PetConstants.getCrystals(lockedCount)
 
-            val unlocked = activeSlots - lockedCount
+            val unlocked = 9 - lockedCount
             repeat(unlocked) {
                 val (option, value) = rollSlot() ?: return@repeat
                 val idx = requirements.indices.firstOrNull { i ->
