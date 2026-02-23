@@ -1,11 +1,12 @@
 package me.algosketch.aioninfo.presentation.feature.enhancement
 
+import androidx.lifecycle.ViewModel
 import me.algosketch.aioninfo.data.enhancement.BreakthroughCost
 import me.algosketch.aioninfo.data.enhancement.EnhancementCost
 import me.algosketch.aioninfo.data.enhancement.EnhancementRepository
 import kotlin.random.Random
 
-class EnhancementViewModel {
+class EnhancementViewModel : ViewModel() {
     // TODO: 각 단계별 트라이 횟수도 출력해 주기
     /**
      * 해당 레벨까지의 시뮬레이션 된 강화 비용 반환

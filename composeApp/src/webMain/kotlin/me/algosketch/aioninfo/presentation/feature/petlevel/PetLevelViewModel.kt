@@ -3,6 +3,7 @@ package me.algosketch.aioninfo.presentation.feature.petlevel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.random.Random
@@ -96,7 +97,7 @@ data class CalculationResult(
     val kinaData: List<Int>,
 )
 
-class PetLevelViewModel {
+class PetLevelViewModel : ViewModel() {
     var selectedRace by mutableStateOf(PetRace.INTELLECT)
         private set
 

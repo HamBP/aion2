@@ -11,12 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import me.algosketch.aioninfo.data.enhancement.EnhancementRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EnhancementScreen(
-    viewModel: EnhancementViewModel = EnhancementViewModel() // TODO: DI
+    viewModel: EnhancementViewModel = viewModel { EnhancementViewModel() } // TODO: DI
 ) {
     var selectedLevel by remember { mutableStateOf(50) }
     val isUnique by remember { derivedStateOf { selectedLevel <= 92 } }
