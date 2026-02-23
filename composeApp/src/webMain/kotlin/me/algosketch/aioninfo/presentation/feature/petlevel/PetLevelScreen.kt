@@ -31,7 +31,7 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
     ) {
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = "펫 이해도작 기댓값 계산기",
+            text = "펫 이해도작 시뮬레이터",
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
         )
@@ -114,16 +114,31 @@ fun PetLevelScreen(viewModel: PetLevelViewModel = viewModel { PetLevelViewModel(
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = { viewModel.calculate() },
-            enabled = requirements.isNotEmpty(),
+            enabled = requirements.isNotEmpty() && !viewModel.isCalculating,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)),
         ) {
-            Text("계산하기")
+            if (viewModel.isCalculating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("계산 중...")
+            } else {
+                Text("계산하기")
+            }
         }
 
         viewModel.result?.let { result ->
             HorizontalDivider()
 
             Text("예상 비용", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "1,000회 시뮬레이션 기반",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ResultCard(
                     modifier = Modifier.weight(1f),

@@ -4,14 +4,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 enum class PetRace(val displayName: String) {
-    INTELLECT("지성"),
-    WILD("야성"),
-    NATURE("자연"),
-    TRANSFORM("변형"),
+    NORMAL("일반"),
     SPECIAL("특수"),
 }
 
@@ -85,7 +87,7 @@ data class CalculationResult(
 )
 
 class PetLevelViewModel : ViewModel() {
-    var selectedRace by mutableStateOf(PetRace.INTELLECT)
+    var selectedRace by mutableStateOf(PetRace.NORMAL)
         private set
 
     // 굴리기 전 이미 잠긴 슬롯 수 (0~8)
@@ -95,6 +97,9 @@ class PetLevelViewModel : ViewModel() {
     val requirements = MutableStateFlow<List<OptionRequirement>>(emptyList())
 
     var result by mutableStateOf<CalculationResult?>(null)
+        private set
+
+    var isCalculating by mutableStateOf(false)
         private set
 
     fun selectRace(race: PetRace) {
@@ -113,19 +118,26 @@ class PetLevelViewModel : ViewModel() {
         val reqs = requirements.value
         if (reqs.isEmpty()) return
 
-        val simulations = 10000
-        val crystalsList = mutableListOf<Int>()
+        viewModelScope.launch {
+            isCalculating = true
+            delay(1) // UI가 로딩 상태를 렌더링할 수 있도록 양보
 
-        repeat(simulations) {
-            crystalsList.add(simulate(reqs, preLockedSlots))
+            val crystalsList = withContext(Dispatchers.Default) {
+                val list = mutableListOf<Int>()
+                repeat(1000) {
+                    list.add(simulate(reqs, preLockedSlots))
+                }
+                list
+            }
+
+            result = CalculationResult(
+                avgCrystals = crystalsList.average(),
+                avgKina = crystalsList.average() * PetConstants.KINA_PER_CRYSTAL,
+                crystalsData = crystalsList,
+                kinaData = crystalsList.map { it * PetConstants.KINA_PER_CRYSTAL },
+            )
+            isCalculating = false
         }
-
-        result = CalculationResult(
-            avgCrystals = crystalsList.average(),
-            avgKina = crystalsList.average() * PetConstants.KINA_PER_CRYSTAL,
-            crystalsData = crystalsList,
-            kinaData = crystalsList.map { it * PetConstants.KINA_PER_CRYSTAL },
-        )
     }
 
     private fun simulate(requirements: List<OptionRequirement>, preLockedSlots: Int): Int {
